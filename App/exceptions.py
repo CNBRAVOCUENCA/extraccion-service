@@ -9,6 +9,10 @@ class PdfExtractionError(ExtractionException):
     """No se pudo extraer texto del PDF (archivo corrupto o formato inválido)."""
 
 
+class PdfPasswordRequiredError(ExtractionException):
+    """El PDF requiere una contraseña para poder extraer su contenido."""
+
+
 class DocumentFetchError(ExtractionException):
     """No se pudo obtener el documento desde documentos-service."""
 

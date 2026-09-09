@@ -5,9 +5,14 @@ Es el punto donde, al integrar el patrón Saga, se agregarían Retry y
 Circuit Breaker.
 """
 
+import base64
+import binascii
+
 import httpx
+from pydantic import ValidationError
 
 from App.exceptions import DocumentFetchError, DocumentNotFoundUpstreamError
+from App.schemas.extraction import DocumentFileResponse
 
 
 class DocumentosClient:
@@ -32,4 +37,10 @@ class DocumentosClient:
             raise DocumentFetchError(
                 f"documentos-service respondió {response.status_code} al pedir el documento {document_id}"
             )
-        return response.content
+        try:
+            upstream_file = DocumentFileResponse.model_validate(response.json())
+            return base64.b64decode(upstream_file.file_base64, validate=True)
+        except (ValueError, TypeError, binascii.Error, ValidationError) as exc:
+            raise DocumentFetchError(
+                f"documentos-service devolvió un archivo Base64 inválido para el documento {document_id}"
+            ) from exc

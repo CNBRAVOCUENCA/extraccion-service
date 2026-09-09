@@ -7,6 +7,10 @@ class ExtractRequest(BaseModel):
     document_id: int
 
 
+class DocumentFileResponse(BaseModel):
+    file_base64: str
+
+
 class ExtractionResponse(BaseModel):
     document_id: int
     extracted_text: str

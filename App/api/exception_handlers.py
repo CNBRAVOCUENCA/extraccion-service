@@ -3,10 +3,16 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from App.exceptions import DocumentFetchError, DocumentNotFoundUpstreamError, PdfExtractionError
+from App.exceptions import (
+    DocumentFetchError,
+    DocumentNotFoundUpstreamError,
+    PdfExtractionError,
+    PdfPasswordRequiredError,
+)
 
 _STATUS_MAP = {
     DocumentNotFoundUpstreamError: 404,
+    PdfPasswordRequiredError: 401,
     PdfExtractionError: 422,
     DocumentFetchError: 502,
 }
