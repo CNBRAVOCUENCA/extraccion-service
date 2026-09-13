@@ -1,7 +1,5 @@
 """Pruebas unitarias para DocumentosClient (llamada HTTP a documentos-service)."""
 
-import base64
-
 import httpx
 import pytest
 import respx
@@ -14,26 +12,12 @@ BASE_URL = "http://documentos-service:8000"
 
 @respx.mock
 async def test_get_document_file_returns_bytes():
-    pdf_bytes = b"%PDF-1.4..."
     respx.get(f"{BASE_URL}/api/v1/documents/1/file").mock(
-        return_value=httpx.Response(
-            200,
-            json={"file_base64": base64.b64encode(pdf_bytes).decode("ascii")},
-        )
+        return_value=httpx.Response(200, content=b"%PDF-1.4...")
     )
     client = DocumentosClient(base_url=BASE_URL)
     content = await client.get_document_file(1)
-    assert content == pdf_bytes
-
-
-@respx.mock
-async def test_get_document_file_raises_on_invalid_base64():
-    respx.get(f"{BASE_URL}/api/v1/documents/1/file").mock(
-        return_value=httpx.Response(200, json={"file_base64": "not-base64"})
-    )
-    client = DocumentosClient(base_url=BASE_URL)
-    with pytest.raises(DocumentFetchError):
-        await client.get_document_file(1)
+    assert content == b"%PDF-1.4..."
 
 
 @respx.mock

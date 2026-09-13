@@ -5,14 +5,9 @@ Es el punto donde, al integrar el patrón Saga, se agregarían Retry y
 Circuit Breaker.
 """
 
-import base64
-import binascii
-
 import httpx
-from pydantic import ValidationError
 
 from App.exceptions import DocumentFetchError, DocumentNotFoundUpstreamError
-from App.schemas.extraction import DocumentFileResponse
 
 
 class DocumentosClient:
@@ -23,7 +18,12 @@ class DocumentosClient:
         self.timeout_seconds = timeout_seconds
 
     async def get_document_file(self, document_id: int) -> bytes:
-        """Obtiene el contenido binario del PDF de un documento."""
+        """Obtiene el contenido binario del PDF de un documento.
+
+        documentos-service devuelve el PDF como bytes crudos (media_type
+        application/pdf), no como JSON — por eso se leen directamente de
+        response.content, sin decodificar nada.
+        """
         url = f"{self.base_url}/api/v1/documents/{document_id}/file"
         async with httpx.AsyncClient(timeout=self.timeout_seconds) as http_client:
             try:
@@ -37,10 +37,4 @@ class DocumentosClient:
             raise DocumentFetchError(
                 f"documentos-service respondió {response.status_code} al pedir el documento {document_id}"
             )
-        try:
-            upstream_file = DocumentFileResponse.model_validate(response.json())
-            return base64.b64decode(upstream_file.file_base64, validate=True)
-        except (ValueError, TypeError, binascii.Error, ValidationError) as exc:
-            raise DocumentFetchError(
-                f"documentos-service devolvió un archivo Base64 inválido para el documento {document_id}"
-            ) from exc
+        return response.content
