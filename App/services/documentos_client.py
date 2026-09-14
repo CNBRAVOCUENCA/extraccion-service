@@ -13,7 +13,7 @@ from App.exceptions import DocumentFetchError, DocumentNotFoundUpstreamError
 class DocumentosClient:
     """Cliente para el microservicio documentos-service."""
 
-    def __init__(self, base_url: str, timeout_seconds: float = 10.0):
+    def __init__(self, base_url: str, timeout_seconds: float = 60.0):
         self.base_url = base_url.rstrip("/")
         self.timeout_seconds = timeout_seconds
 
