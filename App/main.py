@@ -2,6 +2,8 @@
 
 from fastapi import FastAPI
 
+from App.logging_config import configurar_logging
+
 from App.api import extraction_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
@@ -10,6 +12,8 @@ from App.config.settings import settings
 docs_url = "/docs" if settings.debug else None
 redoc_url = "/redoc" if settings.debug else None
 openapi_url = "/openapi.json" if settings.debug else None
+
+configurar_logging()
 
 app = FastAPI(
     title=settings.app_name,
