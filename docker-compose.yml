@@ -14,10 +14,16 @@ services:
     image: traefik:v3.5
     command:
       - --providers.docker=true
+      - --providers.docker.endpoint=unix:///var/run/docker.sock
+      - --providers.docker.network=extractor-stress_web
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:80
       - --api.dashboard=true
       - --api.insecure=true
+    environment:
+      # Necesario en Docker Desktop (Windows) para que Traefik pueda hablar
+      # con el daemon; sin esto da "API returned a 400 (Bad Request)".
+      DOCKER_API_VERSION: "1.44"
     ports:
       - "80:80"      # gateway (balanceador de las 5 réplicas)
       - "8080:8080"  # dashboard de Traefik
