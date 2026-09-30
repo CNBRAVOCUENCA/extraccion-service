@@ -6,3 +6,9 @@ __pycache__/
 venv/
 .env
 .DS_Store
+
+# Resultados y artefactos de las pruebas de carga
+*.bin
+*.tar
+tests/stress/**/targets-generated.txt
+tests/stress/**/results.bin

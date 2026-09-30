@@ -10,6 +10,8 @@ dependencies = [
     "pydantic-settings>=2.5.0",
     "pypdf>=4.0.0",
     "httpx>=0.24.0,<1.0.0",
+    "python-multipart>=0.0.9",
+    "redis>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -18,6 +20,10 @@ dev = [
     "pytest-asyncio>=0.26.0",
     "respx>=0.21.0",
     "reportlab>=4.0.0",
+]
+# Backend de extracción más rápido para superar el benchmark del profesor.
+fast = [
+    "pymupdf>=1.24.0",
 ]
 
 [build-system]

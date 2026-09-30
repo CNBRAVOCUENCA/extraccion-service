@@ -1,0 +1,73 @@
+# Test de carga/estrés del extractor (TP Desarrollo de Software - UTN FRSR).
+#
+# Levanta el extractor con 5 réplicas detrás de Traefik (balanceo) + Redis
+# (caché compartido), con límites de CPU y RAM por réplica para igualdad de
+# condiciones. Reproducible con un único comando:
+#
+#   docker compose up --build
+#
+# El endpoint queda en:  http://localhost/extract   (POST, PDF binario)
+name: extractor-stress
+
+services:
+  traefik:
+    image: traefik:v3.5
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --api.dashboard=true
+      - --api.insecure=true
+    ports:
+      - "80:80"      # gateway (balanceador de las 5 réplicas)
+      - "8080:8080"  # dashboard de Traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: [web]
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [web]
+
+  extractor:
+    build:
+      context: .
+    environment:
+      DEBUG: "false"
+      # Backend de extracción: pymupdf (rápido) o pypdf (baseline).
+      EXTRACTOR_BACKEND: "pymupdf"
+      # Workers por réplica (1 CPU por réplica -> 1 worker es lo óptimo).
+      EXTRACT_WORKERS: "1"
+      # Máx. peticiones admitidas a la vez por réplica (backpressure -> 503).
+      MAX_INFLIGHT: "16"
+      # Caché compartido entre réplicas.
+      CACHE_ENABLED: "true"
+      REDIS_URL: "redis://redis:6379"
+      CACHE_TTL_SECONDS: "3600"
+    depends_on:
+      redis:
+        condition: service_healthy
+    deploy:
+      replicas: 5
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1g
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.extractor.rule=PathPrefix(`/extract`) || PathPrefix(`/health`)
+      - traefik.http.services.extractor.loadbalancer.server.port=8000
+    networks: [web]
+
+networks:
+  web:
