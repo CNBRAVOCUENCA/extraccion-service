@@ -4,7 +4,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+<<<<<<< HEAD
 from App.api import extract_sync_router, extraction_router
+=======
+from App.logging_config import configurar_logging
+
+from App.api import extraction_router
+>>>>>>> 5d843c24f72676e3e085d6858bac896d8c539d66
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
 from App.services.extract_pool import ExtractionPool
@@ -24,6 +30,8 @@ async def lifespan(app: FastAPI):
 docs_url = "/docs" if settings.debug else None
 redoc_url = "/redoc" if settings.debug else None
 openapi_url = "/openapi.json" if settings.debug else None
+
+configurar_logging()
 
 app = FastAPI(
     title=settings.app_name,
