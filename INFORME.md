@@ -116,7 +116,22 @@ Documentar acá qué se fue probando y por qué se llegó a la configuración fi
 elección de `MAX_INFLIGHT`, cantidad de réplicas, backend, efecto del caché,
 etc. (imprescindible para el puntaje ganador según el TP).
 
-## 8. Cómo reproducir
+## 8. Metodología: Code First + TDD
+
+El micro se desarrolló con enfoque **Code First**: primero la lógica de negocio
+(extracción, pool, backpressure, caché) cubierta con **tests unitarios** siguiendo
+**TDD**, y recién en la última capa el **endpoint**. El **contrato** de ese
+endpoint es el JSON que se recibe/devuelve: la respuesta `{"content", "page_count"}`
+que exige el TP. Los tests no son un extra: son lo que garantiza que el endpoint
+haga lo que dice su contrato (multipart y body crudo devuelven 200 con el formato
+correcto; PDF inválido → 422; servicio saturado → 503).
+
+> *Nota:* en **Code First** el contrato (Swagger/OpenAPI) lo genera FastAPI a
+> partir del código. La alternativa, **API First**, es diseñar primero ese
+> contrato y después programar contra él. Acá se usó Code First, que es lo que
+> el proyecto ya venía aplicando con FastAPI.
+
+## 9. Cómo reproducir
 
 ```powershell
 # 1. Levantar
