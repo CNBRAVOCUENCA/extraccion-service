@@ -40,6 +40,7 @@ $resultsFile = "vegeta/extractor-$((Get-Date).ToString('yyyyMMdd-HHmmss')).bin"
 Write-Host "Prueba Vegeta: $Rate req/s durante $Duration (timeout $Timeout) contra $Target"
 
 & docker run --rm `
+    --entrypoint vegeta `
     -v "${stressDir}:/work" `
     -w /work `
     peterevans/vegeta `
@@ -48,6 +49,7 @@ if ($LASTEXITCODE -ne 0) { throw "Vegeta terminó con error en el ataque." }
 
 Write-Host "`nReporte:"
 & docker run --rm `
+    --entrypoint vegeta `
     -v "${stressDir}:/work" `
     -w /work `
     peterevans/vegeta `
