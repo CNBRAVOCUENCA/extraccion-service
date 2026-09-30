@@ -23,6 +23,7 @@ services:
       - ./tests/stress/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - extractor
+    restart: unless-stopped
     networks: [web]
 
   redis:
@@ -32,6 +33,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    restart: unless-stopped
     networks: [web]
 
   extractor:
@@ -58,6 +60,7 @@ services:
         limits:
           cpus: "1.0"
           memory: 1g
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 5s
