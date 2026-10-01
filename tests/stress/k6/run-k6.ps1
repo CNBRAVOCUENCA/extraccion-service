@@ -15,10 +15,15 @@ if ($LASTEXITCODE -ne 0) {
     throw "No existe la red '$Network'. Levanta el stack primero: docker compose up -d --build (en extraccion-service)."
 }
 
+$summaryFile = "k6/resultado-$((Get-Date).ToString('yyyyMMdd-HHmmss')).txt"
 Write-Host "Prueba Spike (k6) contra $Target"
+# k6 escribe el progreso por stderr: que no se interprete como error de PowerShell.
+$ErrorActionPreference = "Continue"
 & docker run --rm -i `
     --network $Network `
     -e "TARGET=$Target" `
     -v "${stressDir}:/work" `
     -w /work `
-    grafana/k6 run k6/spike.js
+    grafana/k6 run --no-color k6/spike.js 2>&1 | Tee-Object -FilePath (Join-Path $stressDir $summaryFile)
+
+Write-Host "`nResumen guardado en: $(Join-Path $stressDir $summaryFile)"
