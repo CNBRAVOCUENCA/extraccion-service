@@ -13,10 +13,10 @@ import { check } from 'k6';
 
 // open() debe ir en el init (fuera de la función default). 'b' = binario.
 const PDFS = [
-  open('./pdfs/01-liviano.pdf', 'b'),
-  open('./pdfs/02-chico.pdf', 'b'),
-  open('./pdfs/03-mediano.pdf', 'b'),
-  open('./pdfs/04-grande.pdf', 'b'),
+  open('../pdfs/01-liviano.pdf', 'b'),
+  open('../pdfs/02-chico.pdf', 'b'),
+  open('../pdfs/03-mediano.pdf', 'b'),
+  open('../pdfs/04-grande.pdf', 'b'),
 ];
 
 const TARGET = __ENV.TARGET || 'http://gateway/extract';
