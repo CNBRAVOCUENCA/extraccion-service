@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     api_v1_prefix: str = "/api/v1"
 
     # --- Endpoint síncrono POST /extract (Test de carga/estrés) ---
-    # Backend de extracción: "pypdf" (por defecto) o "pymupdf" (más rápido).
-    extractor_backend: str = "pypdf"
+    # Backend: "pymupdf" (por defecto: Markdown, rápido) o "pypdf" (texto plano, baseline).
+    extractor_backend: str = "pymupdf"
     # Workers del pool que corre la extracción fuera del event loop.
     extract_workers: int = 1
     # Máximo de peticiones simultáneas admitidas (corriendo + en cola).

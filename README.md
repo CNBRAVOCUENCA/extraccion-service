@@ -36,7 +36,7 @@ tests/stress/                      # pruebas de carga (k6 y Vegeta) + PDFs
 
 | Método | Ruta | Entrada | Salida |
 |---|---|---|---|
-| POST | `/extract` | PDF binario (multipart `file` o body crudo) | `{"content", "page_count"}` |
+| POST | `/extract` | PDF binario (multipart `file` o body crudo) | `{"content": "<Markdown>", "page_count"}` |
 | POST | `/api/v1/extract` | `{"document_id": N}` | `{document_id, extracted_text, char_count}` |
 | GET | `/health` | — | `{status, service}` |
 
@@ -65,7 +65,7 @@ Copiar `.env.example` a `.env`. Variables principales:
 
 | Variable | Default | Para qué |
 |---|---|---|
-| `EXTRACTOR_BACKEND` | `pypdf` | `pypdf` (baseline) o `pymupdf` (rápido) |
+| `EXTRACTOR_BACKEND` | `pymupdf` | `pymupdf` (Markdown, rápido) o `pypdf` (texto plano, baseline) |
 | `EXTRACT_WORKERS` | `1` | workers de extracción por réplica |
 | `MAX_INFLIGHT` | `8` | peticiones simultáneas antes de responder 503 |
 | `CACHE_ENABLED` | `true` | caché de resultados en Redis |

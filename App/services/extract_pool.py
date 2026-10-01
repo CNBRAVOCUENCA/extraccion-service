@@ -59,7 +59,7 @@ class ExtractionPool:
 
         Levanta ExtractionOverloaded si no hay cupo (backpressure).
         """
-        key = "extract:" + hashlib.sha256(pdf_bytes).hexdigest()
+        key = "extract:md:v1:" + hashlib.sha256(pdf_bytes).hexdigest()
 
         cached = await self._cache_get(key)
         if cached is not None:
