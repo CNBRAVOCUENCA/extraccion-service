@@ -109,10 +109,15 @@ red de Docker del stack, contra `http://gateway/extract`.
 
 | Métrica (k6 Spike, 100 VUs)    | Profesor | Nuestro optimizado |
 |--------------------------------|----------|--------------------|
-| Peticiones procesadas          | 1.037    |                    |
-| Throughput sostenido (req/s)   | 25.35    |                    |
-| Tasa de error                  | 0.00%    |                    |
-| Latencia P50 / P90 / P95       | 1.88 / 7.83 / 8.80 s |          |
+| Peticiones procesadas (40 s)   | 1.037    | **8.088**          |
+| Throughput sostenido (req/s)   | 25.35    | **202.2**          |
+| Tasa de error                  | 0.00%    | **0.00% (8088/8088 OK)** |
+| Latencia P50 / P90 / P95       | 1.88 / 7.83 / 8.80 s | **212 ms / 954 ms / 1.30 s** |
+| Latencia máxima                | 13.94 s  | **4.71 s**         |
+
+Corrida k6 del 01/10/2026 (perfil: 0→100 VUs en 10 s, 20 s sostenido, 100→0 en
+10 s), dentro de la red del stack contra `http://gateway/extract`, PDFs enviados
+como multipart.
 
 **Cómo medir baseline vs optimizado:** correr la prueba dos veces cambiando en
 `docker-compose.yml` el servicio `extractor`:
