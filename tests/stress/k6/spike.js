@@ -19,7 +19,7 @@ const PDFS = [
   open('./pdfs/04-grande.pdf', 'b'),
 ];
 
-const TARGET = __ENV.TARGET || 'http://host.docker.internal/extract';
+const TARGET = __ENV.TARGET || 'http://gateway/extract';
 
 export const options = {
   scenarios: {
