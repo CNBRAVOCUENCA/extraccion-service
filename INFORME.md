@@ -92,10 +92,20 @@ Las tres mitigaciones atacan justamente eso:
 
 | Métrica (Vegeta 50 req/s, 30s) | Profesor | Nuestro baseline | Nuestro optimizado |
 |--------------------------------|----------|------------------|--------------------|
-| Throughput efectivo (req/s)    | 16.65    |                  |                    |
-| Peticiones exitosas            | 66.53%   |                  |                    |
-| Timeouts (code 0)              | 33.40%   |                  |                    |
-| Latencia P50                   | 14.89 s  |                  |                    |
+| Throughput efectivo (req/s)    | 16.65    |                  | **49.98**          |
+| Peticiones exitosas            | 66.53%   |                  | **100% (1500/1500)** |
+| Timeouts (code 0)              | 33.40%   |                  | **0%**             |
+| Latencia P50                   | 14.89 s  |                  | **9.36 ms**        |
+| Latencia P95 / P99 / máx       | —        |                  | 25.3 ms / 147.7 ms / 607 ms |
+
+*Optimizado* = 5 réplicas (1 CPU / 1 GB c/u) detrás de nginx, backend `pymupdf`,
+caché Redis activo, `MAX_INFLIGHT=16`. Corrida del 01/10/2026
+(`tests/stress/vegeta/extractor-20261001-085900.bin`). Vegeta corre dentro de la
+red de Docker del stack, contra `http://gateway/extract`.
+
+> Nota: con 4 PDFs rotando, tras la primera extracción de cada uno casi todas
+> las peticiones se resuelven desde el caché compartido. Para aislar el efecto
+> del caché se mide también la variante con `CACHE_ENABLED=false`.
 
 | Métrica (k6 Spike, 100 VUs)    | Profesor | Nuestro optimizado |
 |--------------------------------|----------|--------------------|
