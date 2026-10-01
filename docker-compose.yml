@@ -26,6 +26,19 @@ services:
     restart: unless-stopped
     networks: [web]
 
+  # Acceso público OPCIONAL por túnel de Cloudflare (sin abrir puertos).
+  # Solo se levanta con:  docker compose --profile publico up -d
+  # La URL pública (https://...trycloudflare.com) aparece en:
+  #   docker compose logs cloudflared
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://gateway:80
+    depends_on:
+      - gateway
+    profiles: [publico]
+    restart: unless-stopped
+    networks: [web]
+
   redis:
     image: redis:7-alpine
     healthcheck:

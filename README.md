@@ -73,6 +73,18 @@ todos los endpoints con su contrato y permite probarlos desde el navegador
 (*Try it out* → elegir el PDF → *Execute*). Está habilitado en el compose con
 `DOCS_ENABLED=true`; por defecto queda apagado por seguridad.
 
+**Desde internet (opcional).** Para abrir la página desde otro dispositivo:
+
+```powershell
+docker compose --profile publico up -d
+docker compose logs cloudflared | Select-String trycloudflare
+```
+
+La segunda línea muestra una URL `https://...trycloudflare.com` que sirve la
+misma página (y `/docs`). La URL cambia cada vez que se levanta el túnel y
+funciona mientras la PC y Docker estén encendidos. Para cortarlo:
+`docker compose stop cloudflared`.
+
 **Postman.** Importar `tests/postman/extractor.postman_collection.json`
 (Import → archivo) y usar *Run collection*. Prueba el contrato del endpoint con
 11 validaciones automáticas: health, extracción multipart y binaria, PDF
