@@ -41,6 +41,8 @@ services:
       context: .
     environment:
       DEBUG: "false"
+      # Swagger en http://localhost/docs para probar la API desde el navegador.
+      DOCS_ENABLED: "true"
       # Backend de extracción: pymupdf (rápido) o pypdf (baseline).
       EXTRACTOR_BACKEND: "pymupdf"
       # Workers por réplica (1 CPU por réplica -> 1 worker es lo óptimo).

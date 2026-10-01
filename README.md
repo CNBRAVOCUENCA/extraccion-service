@@ -40,6 +40,7 @@ tests/stress/                      # pruebas de carga (k6 y Vegeta) + PDFs
 | POST | `/api/v1/extract` | `{"document_id": N}` | `{document_id, extracted_text, char_count}` |
 | GET | `/health` | — | `{status, service}` |
 | GET | `/` | — | Página web para probar `/extract` |
+| GET | `/docs` | — | Swagger (si `DOCS_ENABLED=true`) |
 
 El endpoint síncrono responde con header `X-Cache: HIT|MISS` y, si el servicio
 está saturado, con **503** (backpressure) en lugar de encolar y expirar.
@@ -66,6 +67,11 @@ cd tests/stress
 (o se arrastra), se envía a `/extract` y se ve el Markdown renderizado y en crudo,
 junto con las páginas, el tiempo de respuesta y si salió de caché. Abajo muestra
 la tabla de resultados de las pruebas de carga.
+
+**Swagger (documentación interactiva).** Abrir **http://localhost/docs**: muestra
+todos los endpoints con su contrato y permite probarlos desde el navegador
+(*Try it out* → elegir el PDF → *Execute*). Está habilitado en el compose con
+`DOCS_ENABLED=true`; por defecto queda apagado por seguridad.
 
 **Postman.** Importar `tests/postman/extractor.postman_collection.json`
 (Import → archivo) y usar *Run collection*. Prueba el contrato del endpoint con

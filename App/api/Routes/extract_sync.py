@@ -13,7 +13,22 @@ from App.services.extract_pool import ExtractionOverloaded
 router = APIRouter(tags=["extract-sync"])
 
 
-@router.post("/extract", response_model=SyncExtractionResponse)
+@router.post(
+    "/extract",
+    response_model=SyncExtractionResponse,
+    summary="Convertir un PDF a Markdown",
+    description=(
+        "Recibe el PDF (campo `file` en multipart/form-data, o el PDF crudo en el body "
+        "con `Content-Type: application/pdf`) y devuelve el contenido en Markdown y la "
+        "cantidad de páginas. El header `X-Cache` indica si salió de caché (HIT) o no (MISS)."
+    ),
+    responses={
+        400: {"description": "No se recibió ningún PDF"},
+        401: {"description": "El PDF está protegido con contraseña"},
+        422: {"description": "El archivo no es un PDF válido"},
+        503: {"description": "Servicio saturado (backpressure); reintentar"},
+    },
+)
 async def extract_sync(
     request: Request,
     response: Response,

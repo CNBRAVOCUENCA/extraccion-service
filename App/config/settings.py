@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     app_name: str = "extraccion-service"
     app_version: str = "0.1.0"
     debug: bool = False
+    # Documentación interactiva (Swagger en /docs). Apagada por defecto por
+    # seguridad; se prende con DOCS_ENABLED=true (en el compose del TP).
+    docs_enabled: bool = False
 
     # Flujo asíncrono existente (Saga): busca el PDF en documentos-service.
     documentos_service_url: str = "http://localhost:8001"

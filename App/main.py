@@ -23,15 +23,20 @@ async def lifespan(app: FastAPI):
         await app.state.extraction_pool.aclose()
 
 
-# Disable API documentation in production (when debug=False)
-docs_url = "/docs" if settings.debug else None
-redoc_url = "/redoc" if settings.debug else None
-openapi_url = "/openapi.json" if settings.debug else None
+# Documentación de la API: solo con DEBUG=true o DOCS_ENABLED=true.
+_docs = settings.debug or settings.docs_enabled
+docs_url = "/docs" if _docs else None
+redoc_url = "/redoc" if _docs else None
+openapi_url = "/openapi.json" if _docs else None
 
 configurar_logging()
 
 app = FastAPI(
     title=settings.app_name,
+    description=(
+        "Microservicio de extracción de texto de PDF. `POST /extract` recibe un PDF "
+        "y devuelve su contenido en Markdown en la misma respuesta (síncrono)."
+    ),
     version=settings.app_version,
     debug=settings.debug,
     docs_url=docs_url,
