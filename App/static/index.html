@@ -41,6 +41,7 @@
   .stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
   .stat b { font-size: 20px; }
   .hit { color: var(--ok); } .miss { color: var(--warn); }
+  .note { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--ok); color: var(--ok); margin-bottom: 12px; display: none; }
   .msg { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--err); color: var(--err); display: none; }
   .tabs { display: flex; gap: 6px; margin: 14px 0 10px; }
   .tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
@@ -80,10 +81,11 @@
   <div class="msg" id="msg" role="alert"></div>
 
   <section class="panel hidden" id="result">
+    <div class="note" id="dup" role="status"></div>
     <div class="stats">
       <div class="stat"><span>Páginas</span><b id="s-pages">–</b></div>
       <div class="stat"><span>Tiempo de respuesta</span><b id="s-time">–</b></div>
-      <div class="stat"><span>Caché</span><b id="s-cache">–</b></div>
+      <div class="stat"><span>Documento</span><b id="s-cache">–</b></div>
       <div class="stat"><span>Caracteres</span><b id="s-chars">–</b></div>
     </div>
     <div class="tabs" role="tablist">
@@ -183,7 +185,13 @@
       $("s-pages").textContent = body.page_count;
       $("s-time").textContent = ms < 1000 ? ms.toFixed(0) + " ms" : (ms / 1000).toFixed(2) + " s";
       const cache = resp.headers.get("X-Cache") || "–";
-      const sc = $("s-cache"); sc.textContent = cache; sc.className = cache === "HIT" ? "hit" : "miss";
+      const repetido = cache === "HIT";
+      const sc = $("s-cache");
+      sc.textContent = repetido ? "Repetido" : "Nuevo";
+      sc.className = repetido ? "hit" : "miss";
+      const dup = $("dup");
+      dup.textContent = "Documento repetido: este PDF ya se había procesado. Se muestra el resultado guardado (no se volvió a extraer).";
+      dup.style.display = repetido ? "block" : "none";
       $("s-chars").textContent = lastMd.length.toLocaleString("es-AR");
       render(lastMd);
       $("result").classList.remove("hidden");
