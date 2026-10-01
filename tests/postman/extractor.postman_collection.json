@@ -1,0 +1,154 @@
+{
+  "info": {
+    "name": "Extractor PDF a Markdown (TP Test de Carga)",
+    "description": "Contrato del endpoint síncrono POST /extract. Importar en Postman y usar 'Run collection'. Requiere el stack levantado (docker compose up -d).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Health",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('servicio correcto', () => pm.expect(pm.response.json().service).to.eql('extraccion-service'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "2. Extraer PDF (multipart)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const b = pm.response.json();",
+              "pm.test('contrato: content (string) y page_count (número)', () => { pm.expect(b.content).to.be.a('string'); pm.expect(b.page_count).to.be.a('number'); pm.expect(b.page_count).to.be.above(0); });",
+              "pm.test('header X-Cache presente', () => pm.expect(pm.response.headers.get('X-Cache')).to.be.oneOf(['HIT','MISS']));",
+              "pm.test('responde en menos de 30 s', () => pm.expect(pm.response.responseTime).to.be.below(30000));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/extract",
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "../stress/pdfs/03-mediano.pdf"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "3. Extraer PDF (body binario)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.test('devuelve page_count', () => pm.expect(pm.response.json().page_count).to.be.above(0));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/extract",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/pdf"
+          }
+        ],
+        "body": {
+          "mode": "file",
+          "file": {
+            "src": "../stress/pdfs/01-liviano.pdf"
+          }
+        }
+      }
+    },
+    {
+      "name": "4. Error: archivo que no es PDF (422)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('422 PDF inválido', () => pm.response.to.have.status(422));",
+              "pm.test('trae detalle del error', () => pm.expect(pm.response.json().detail).to.be.a('string'));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/extract",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/pdf"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "esto no es un pdf"
+        }
+      }
+    },
+    {
+      "name": "5. Error: sin archivo (400)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 sin PDF', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/extract",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/pdf"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        }
+      }
+    }
+  ]
+}

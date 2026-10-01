@@ -39,6 +39,7 @@ tests/stress/                      # pruebas de carga (k6 y Vegeta) + PDFs
 | POST | `/extract` | PDF binario (multipart `file` o body crudo) | `{"content": "<Markdown>", "page_count"}` |
 | POST | `/api/v1/extract` | `{"document_id": N}` | `{document_id, extracted_text, char_count}` |
 | GET | `/health` | — | `{status, service}` |
+| GET | `/` | — | Página web para probar `/extract` |
 
 El endpoint síncrono responde con header `X-Cache: HIT|MISS` y, si el servicio
 está saturado, con **503** (backpressure) en lugar de encolar y expirar.
@@ -58,6 +59,19 @@ cd tests/stress
 .\vegeta\run-vegeta.ps1   # carga fija: 50 req/s durante 30s, rotando 4 PDFs
 .\k6\run-k6.ps1           # spike: rampa a 100 VUs
 ```
+
+## Probarlo a mano
+
+**Página web.** Con el stack levantado, abrir **http://localhost**: se elige un PDF
+(o se arrastra), se envía a `/extract` y se ve el Markdown renderizado y en crudo,
+junto con las páginas, el tiempo de respuesta y si salió de caché. Abajo muestra
+la tabla de resultados de las pruebas de carga.
+
+**Postman.** Importar `tests/postman/extractor.postman_collection.json`
+(Import → archivo) y usar *Run collection*. Prueba el contrato del endpoint con
+11 validaciones automáticas: health, extracción multipart y binaria, PDF
+inválido (422) y petición sin archivo (400). Si Postman no encuentra los PDFs,
+en las peticiones 2 y 3 hay que volver a elegir el archivo de `tests/stress/pdfs`.
 
 ## Configuración (Twelve-Factor)
 

@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extractor PDF a Markdown</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --panel: #ffffff; --ink: #18202b; --muted: #5d6b7c;
+    --line: #dde3ea; --accent: #0b5cad; --accent-ink: #ffffff;
+    --ok: #12804a; --warn: #a15c00; --err: #b3261e; --code: #f1f3f6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #11161d; --panel: #19202a; --ink: #e6ebf1; --muted: #93a1b2;
+      --line: #2b3542; --accent: #4c9be8; --accent-ink: #0d1117;
+      --ok: #4cc38a; --warn: #e3a341; --err: #f2867e; --code: #222b37;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 22px 16px 8px; max-width: 1080px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 22px; }
+  header p { margin: 4px 0 0; color: var(--muted); }
+  main { max-width: 1080px; margin: 0 auto; padding: 8px 16px 40px; display: grid; gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .drop { display: block; border: 2px dashed var(--line); border-radius: 10px; padding: 26px 16px; text-align: center;
+          cursor: pointer; transition: border-color .15s, background .15s; }
+  .drop.over, .drop:hover { border-color: var(--accent); }
+  .drop strong { color: var(--accent); }
+  .drop small { display: block; color: var(--muted); margin-top: 4px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+           padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .5; cursor: default; }
+  #fname { color: var(--muted); overflow-wrap: anywhere; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .stat span { display: block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  .stat b { font-size: 20px; }
+  .hit { color: var(--ok); } .miss { color: var(--warn); }
+  .msg { padding: 10px 12px; border-radius: 8px; border: 1px solid var(--err); color: var(--err); display: none; }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 10px; }
+  .tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #view { overflow-wrap: anywhere; }
+  #view h1, #view h2, #view h3 { line-height: 1.25; }
+  #raw { background: var(--code); border: 1px solid var(--line); border-radius: 8px; padding: 12px;
+         white-space: pre-wrap; overflow-wrap: anywhere; font: 13px/1.45 ui-monospace, Consolas, monospace;
+         max-height: 520px; overflow: auto; margin: 0; }
+  #view { max-height: 520px; overflow: auto; padding-right: 6px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { border-bottom: 1px solid var(--line); padding: 7px 8px; text-align: left; }
+  th { color: var(--muted); font-weight: 600; }
+  td.us { font-weight: 700; color: var(--ok); }
+  .wrap { overflow-x: auto; }
+  h2.sec { font-size: 16px; margin: 0 0 10px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Extractor PDF a Markdown</h1>
+  <p>Microservicio de extracción síncrono · <code>POST /extract</code> · 5 réplicas detrás de nginx</p>
+</header>
+<main>
+  <section class="panel">
+    <label class="drop" id="drop" for="file">
+      <strong>Elegí un PDF</strong> o arrastralo acá
+      <small>Se envía al endpoint <code>/extract</code> y se muestra el Markdown que devuelve</small>
+    </label>
+    <input type="file" id="file" accept="application/pdf,.pdf" class="hidden">
+    <div class="row">
+      <button class="primary" id="go" disabled>Extraer</button>
+      <span id="fname">Ningún archivo seleccionado</span>
+    </div>
+  </section>
+
+  <div class="msg" id="msg" role="alert"></div>
+
+  <section class="panel hidden" id="result">
+    <div class="stats">
+      <div class="stat"><span>Páginas</span><b id="s-pages">–</b></div>
+      <div class="stat"><span>Tiempo de respuesta</span><b id="s-time">–</b></div>
+      <div class="stat"><span>Caché</span><b id="s-cache">–</b></div>
+      <div class="stat"><span>Caracteres</span><b id="s-chars">–</b></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-tab="view">Vista</button>
+      <button role="tab" aria-selected="false" data-tab="raw">Markdown</button>
+      <button id="copy">Copiar Markdown</button>
+    </div>
+    <div id="view"></div>
+    <pre id="raw" class="hidden"></pre>
+  </section>
+
+  <section class="panel">
+    <h2 class="sec">Resultados de las pruebas de carga (mismas restricciones: 5 réplicas, 1 CPU y 1 GB c/u)</h2>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>Prueba</th><th>Métrica</th><th>Profesor</th><th>Nuestro servicio</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="4">Vegeta · 50 req/s · 30 s</td><td>Throughput efectivo</td><td>16,65 req/s</td><td class="us">50,02 req/s</td></tr>
+          <tr><td>Peticiones exitosas</td><td>66,53 %</td><td class="us">100 % (1500/1500)</td></tr>
+          <tr><td>Timeouts</td><td>33,40 %</td><td class="us">0</td></tr>
+          <tr><td>Latencia P50</td><td>14,89 s</td><td class="us">6,4 ms</td></tr>
+          <tr><td rowspan="4">k6 spike · 100 VUs · 40 s</td><td>Peticiones procesadas</td><td>1.037</td><td class="us">14.818</td></tr>
+          <tr><td>Throughput</td><td>25,35 req/s</td><td class="us">370,4 req/s</td></tr>
+          <tr><td>Tasa de error</td><td>0 %</td><td class="us">0 %</td></tr>
+          <tr><td>Latencia P95 / máx.</td><td>8,80 s / 13,94 s</td><td class="us">0,76 s / 1,72 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const input = $("file"), drop = $("drop"), go = $("go");
+  let current = null, lastMd = "";
+
+  function pick(file) {
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
+      showError("El archivo tiene que ser un PDF.");
+      return;
+    }
+    current = file;
+    $("fname").textContent = file.name + " · " + (file.size / 1024).toFixed(0) + " KB";
+    go.disabled = false;
+    hideError();
+  }
+
+  input.addEventListener("change", () => pick(input.files[0]));
+  ["dragenter", "dragover"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (ev) => pick(ev.dataTransfer.files[0]));
+
+  function showError(text) { const m = $("msg"); m.textContent = text; m.style.display = "block"; }
+  function hideError() { $("msg").style.display = "none"; }
+
+  // Renderizador mínimo del Markdown que genera el servicio (títulos, negritas,
+  // listas y párrafos). Escapa el HTML primero: el texto viene de un PDF cualquiera.
+  function esc(t) {
+    return t.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function inline(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"); }
+  function md2html(md) {
+    const out = []; let list = [];
+    const flush = () => { if (list.length) { out.push("<ul>" + list.join("") + "</ul>"); list = []; } };
+    for (const block of md.split(/\n{2,}/)) {
+      const b = block.trim(); if (!b) continue;
+      const h = b.match(/^(#{1,3}) (.*)$/s);
+      if (h) { flush(); out.push("<h" + h[1].length + ">" + inline(h[2]) + "</h" + h[1].length + ">"); continue; }
+      if (b.startsWith("- ")) { b.split("\n").forEach((l) => list.push("<li>" + inline(l.replace(/^- /, "")) + "</li>")); continue; }
+      flush(); out.push("<p>" + inline(b).replace(/\n/g, " ") + "</p>");
+    }
+    flush(); return out.join("\n");
+  }
+  function render(md) {
+    $("view").innerHTML = md2html(md);
+    $("raw").textContent = md;
+  }
+
+  go.addEventListener("click", async () => {
+    if (!current) return;
+    go.disabled = true; go.textContent = "Extrayendo…"; hideError();
+    const form = new FormData();
+    form.append("file", current, current.name);
+    const t0 = performance.now();
+    try {
+      const resp = await fetch("/extract", { method: "POST", body: form });
+      const ms = performance.now() - t0;
+      const body = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        const detail = body.detail || resp.statusText;
+        const hint = resp.status === 503 ? " (servicio saturado: reintentá en un momento)" : "";
+        showError("Error " + resp.status + ": " + detail + hint);
+        return;
+      }
+      lastMd = body.content || "";
+      $("s-pages").textContent = body.page_count;
+      $("s-time").textContent = ms < 1000 ? ms.toFixed(0) + " ms" : (ms / 1000).toFixed(2) + " s";
+      const cache = resp.headers.get("X-Cache") || "–";
+      const sc = $("s-cache"); sc.textContent = cache; sc.className = cache === "HIT" ? "hit" : "miss";
+      $("s-chars").textContent = lastMd.length.toLocaleString("es-AR");
+      render(lastMd);
+      $("result").classList.remove("hidden");
+    } catch (err) {
+      showError("No se pudo conectar con el servicio: " + err.message);
+    } finally {
+      go.disabled = false; go.textContent = "Extraer";
+    }
+  });
+
+  document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
+    document.querySelectorAll("[data-tab]").forEach((x) => x.setAttribute("aria-selected", x === b));
+    $("view").classList.toggle("hidden", b.dataset.tab !== "view");
+    $("raw").classList.toggle("hidden", b.dataset.tab !== "raw");
+  }));
+
+  $("copy").addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(lastMd); $("copy").textContent = "Copiado"; }
+    catch { $("copy").textContent = "No se pudo copiar"; }
+    setTimeout(() => ($("copy").textContent = "Copiar Markdown"), 1500);
+  });
+</script>
+</body>
+</html>

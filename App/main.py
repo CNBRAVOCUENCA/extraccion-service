@@ -1,8 +1,10 @@
 """Entrypoint del microservicio de Extracción de texto."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 
 from App.logging_config import configurar_logging
 from App.api import extract_sync_router, extraction_router
@@ -44,6 +46,15 @@ register_exception_handlers(app)
 app.include_router(extraction_router, prefix=settings.api_v1_prefix)
 # Endpoint síncrono exigido por el TP: /extract con el PDF directo.
 app.include_router(extract_sync_router)
+
+
+_INDEX = Path(__file__).parent / "static" / "index.html"
+
+
+@app.get("/", include_in_schema=False)
+def front() -> FileResponse:
+    """Página web para probar /extract desde el navegador."""
+    return FileResponse(_INDEX, media_type="text/html")
 
 
 @app.get("/health")

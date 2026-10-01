@@ -59,3 +59,10 @@ def test_extract_sin_archivo_devuelve_400(client):
 def test_extract_pdf_invalido_devuelve_422(client):
     resp = client.post("/extract", content=b"no soy un pdf", headers={"Content-Type": "application/pdf"})
     assert resp.status_code == 422
+
+
+def test_front_se_sirve_en_la_raiz(client):
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert "text/html" in resp.headers["content-type"]
+    assert "/extract" in resp.text
