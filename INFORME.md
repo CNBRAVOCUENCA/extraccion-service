@@ -5,7 +5,7 @@ Ingeniería en Sistemas — Desarrollo de Software
 
 | | |
 |---|---|
-| **Integrantes** | Bravo, Carolina |
+| **Integrantes** | Aaron Rebeco Bustos, Victoria Rios, Agustín Carvajal, Pablo de la Torre, Ana Gomez, Carolina Bravo |
 | **Repositorio** | https://github.com/CNBRAVOCUENCA/extraccion-service |
 | **Fecha** | 01/10/2026 |
 
