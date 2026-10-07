@@ -1,7 +1,7 @@
 # Set de PDFs de prueba
 
-Estos 4 PDFs de tamaño variable se usan en las pruebas de carga (Vegeta y k6),
-rotándolos en cada petición, según pide el TP:
+Estos 4 PDFs de tamaño variable son el corpus base local de las pruebas de carga
+(Vegeta y k6), rotándolos en cada petición:
 
 | Archivo          | Tamaño aprox. |
 |------------------|---------------|
@@ -10,6 +10,7 @@ rotándolos en cada petición, según pide el TP:
 | 03-mediano.pdf   | ~1,3 MB       |
 | 04-grande.pdf    | ~2,5 MB       |
 
-Si querés acercarte más al set del profesor (que incluye un PDF pesado de ~9 MB
-con gráficos/capas), agregá uno como `05-pesado.pdf` y sumalo a la lista de
-`run-vegeta.ps1` y `spike.js`.
+El libro usado como prueba adicional no se copia a esta carpeta ni se versiona.
+Se pasa a los dos scripts mediante `-AdditionalPdfPath`; Docker lo monta como
+`/extra/05-adicional-local.pdf` en solo lectura, fuera del volumen del repositorio.
+Es un caso adicional y no reemplaza el corpus oficial de la catedra.
