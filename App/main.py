@@ -3,7 +3,7 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 
 from App.logging_config import configurar_logging
@@ -64,5 +64,22 @@ def front() -> FileResponse:
 
 @app.get("/health")
 def health() -> dict:
-    """Health check para orquestadores (Docker/Traefik)."""
+    """Liveness: el proceso responde. No consulta dependencias externas.
+
+    Es el que usa el healthcheck de Docker: si Redis cae, el contenedor NO debe
+    marcarse como no saludable ni reiniciarse, porque Redis es solo una caché.
+    """
     return {"status": "ok", "service": settings.app_name}
+
+
+@app.get("/ready")
+async def ready(request: Request) -> dict:
+    """Readiness: el servicio puede recibir tráfico.
+
+    Redis es una caché opcional (si falla, el servicio extrae igual, más lento),
+    así que su caída no vuelve al servicio "no listo": responde 200 con
+    status "degraded" y cache "down" para que quede visible en monitoreo.
+    """
+    cache = await request.app.state.extraction_pool.cache_status()
+    status = "degraded" if cache == "down" else "ok"
+    return {"status": status, "service": settings.app_name, "cache": cache}
