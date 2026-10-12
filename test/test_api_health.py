@@ -38,11 +38,15 @@ class FakeRedis:
 
 
 @pytest.fixture(autouse=True)
-def _no_cache():
-    original = settings.cache_enabled
+def _config_de_test():
+    original_cache_enabled = settings.cache_enabled
+    original_extractor_backend = settings.extractor_backend
     settings.cache_enabled = False
+    # El CI instala [dev], no el extra fast que incluye PyMuPDF.
+    settings.extractor_backend = "pypdf"
     yield
-    settings.cache_enabled = original
+    settings.cache_enabled = original_cache_enabled
+    settings.extractor_backend = original_extractor_backend
 
 
 @pytest.fixture
