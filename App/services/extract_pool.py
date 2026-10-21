@@ -105,6 +105,20 @@ class ExtractionPool:
         except Exception:
             pass
 
+    async def cache_status(self) -> str:
+        """Estado del caché para el readiness: "disabled", "up" o "down".
+
+        Redis es una caché opcional: este estado es informativo y nunca debe
+        tumbar la disponibilidad del servicio.
+        """
+        if self._redis is None:
+            return "disabled"
+        try:
+            await asyncio.wait_for(self._redis.ping(), timeout=1.0)
+        except Exception:
+            return "down"
+        return "up"
+
     async def aclose(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
         if self._redis is not None:
