@@ -13,7 +13,9 @@ DOCUMENTOS_URL = "http://documentos-service-test:9999"
 
 @pytest.fixture
 def client(monkeypatch):
-    monkeypatch.setenv("DOCUMENTOS_SERVICE_URL", DOCUMENTOS_URL)
+    from App.config.settings import settings
+
+    monkeypatch.setattr(settings, "documentos_service_url", DOCUMENTOS_URL)
     from App.main import app
     return TestClient(app)
 
