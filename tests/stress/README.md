@@ -18,14 +18,30 @@ curl.exe http://localhost/health
 
 ## 1. Prueba de carga fija — Vegeta (modelo abierto)
 
-50 req/s durante 30s (1500 solicitudes) rotando los 4 PDFs. Desde esta carpeta
-(`tests/stress`):
+50 req/s durante 30s (1500 solicitudes) rotando los 4 PDFs base. Desde la raiz
+de `extraccion-service`:
 
 ```powershell
-.\vegeta\run-vegeta.ps1
+.\tests\stress\vegeta\run-vegeta.ps1
 ```
 
-Parámetros opcionales: `-Rate`, `-Duration`, `-Timeout`, `-Target`.
+Parametros: `-Rate`, `-Duration`, `-Timeout`, `-Target` y `-AdditionalPdfPath`.
+El parametro opcional agrega un PDF externo como quinto caso, montado en Docker
+en modo solo lectura. No copia el archivo al repo.
+
+Ejemplo con un PDF local adicional:
+
+```powershell
+.\tests\stress\vegeta\run-vegeta.ps1 `
+  -AdditionalPdfPath "D:\Panchito_Memori\Descargas\Microservicios _ un enfoque integrado -- RA-MA .pdf"
+```
+
+Para probar exclusivamente ese PDF y no rotar los cuatro del corpus:
+
+```powershell
+$bookPdf = "D:\Panchito_Memori\Descargas\Microservicios _ un enfoque integrado -- RA-MA .pdf"
+.\tests\stress\vegeta\run-vegeta.ps1 -AdditionalPdfPath $bookPdf -OnlyAdditionalPdf
+```
 
 ## 2. Prueba Spike — k6 (modelo cerrado)
 
@@ -33,6 +49,14 @@ Rampa a 100 VUs en 10s, 20s sostenidos, rampa a 0 en 10s:
 
 ```powershell
 .\k6\run-k6.ps1
+```
+
+Tambien acepta `-AdditionalPdfPath` para rotar ese mismo PDF adicional:
+
+```powershell
+.\tests\stress\k6\run-k6.ps1 `
+  -AdditionalPdfPath "D:\Panchito_Memori\Descargas\Microservicios _ un enfoque integrado -- RA-MA .pdf" `
+  -OnlyAdditionalPdf
 ```
 
 ## Qué mirar

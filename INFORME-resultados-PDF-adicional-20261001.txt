@@ -1,0 +1,34 @@
+RESULTADOS DEL BENCHMARK CON UN SOLO PDF LOCAL DE 7,25 MB
+Fecha: 01/10/2026
+
+El mismo PDF local se uso en todas las solicitudes. No se rotaron los cuatro PDFs base. El archivo se monto en los contenedores en modo solo lectura y no se copio ni se versiono en el repositorio.
+
+VEGETA - 50 solicitudes/s durante 30 s; timeout 30 s
+- Solicitudes: 1.500
+- Throughput efectivo: 49,97 req/s
+- HTTP 200: 1.500 (100 %); errores/timeouts: 0
+- Latencia P50: 46,901 ms
+- Latencia P90: 610,822 ms
+- Latencia P95: 2,054 s
+- Latencia P99: 3,57 s
+- Latencia maxima: 4,466 s
+- Evidencia de Vegeta: archivo binario generado localmente; no se versiona.
+
+K6 - Spike, 100 VUs durante 40 s; timeout 30 s
+- Solicitudes completadas: 651
+- Throughput: 11,71 req/s
+- Checks correctos: 634 (97,38 %)
+- Fallos/timeouts: 17 (2,61 %)
+- Latencia media: 5,99 s
+- P50: 1,77 s
+- P90: 17,29 s
+- P95: 25,34 s
+- Latencia maxima: 34,12 s
+- Evidencia: tests/stress/k6/resultado-20261001-131922.txt
+
+CONDICIONES E INTERPRETACION
+Se mantuvieron cinco replicas, 1 CPU y 1 GB por replica. Redis estaba habilitado. La sonda previa de Vegeta precalento el resultado del PDF; k6 se ejecuto despues, asi que estas metricas incluyen cache caliente y no son una medicion de extraccion en frio.
+
+El PDF de 7,25 MB es un caso local complementario, no el corpus oficial de la catedra. Estas cifras describen exclusivamente la prueba con este archivo y no deben confundirse con los resultados anteriores del corpus base ni presentarse como una comparacion identica al profesor.
+
+El archivo INFORME.md contiene estos resultados en su tabla principal. No se incluye una copia PDF del informe; el Markdown es la fuente vigente.

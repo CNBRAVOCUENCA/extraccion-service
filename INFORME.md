@@ -26,15 +26,29 @@ referencia de la cátedra.
 | **Vegeta** 50 req/s · 30 s | Throughput efectivo | 16,65 req/s | **50,02 req/s** |
 | | Peticiones exitosas | 998 / 1.500 (66,53 %) | **1.500 / 1.500 (100 %)** |
 | | Timeouts (código 0) | 501 (33,40 %) | **0** |
-| | Latencia P50 / P95 / P99 | 14,89 s / — / — | **6,4 ms / 16,5 ms / 30,6 ms** |
-| **k6** spike 100 VUs · 40 s | Peticiones procesadas | 1.037 | **14.818** |
-| | Throughput sostenido | 25,35 req/s | **370,4 req/s** |
-| | Tasa de error | 0,00 % | **0,00 %** |
-| | Latencia P50 / P90 / P95 | 1,88 / 7,83 / 8,80 s | **0,086 / 0,56 / 0,76 s** |
-| | Latencia máxima | 13,94 s | **1,72 s** |
+| | Latencia P50 / P95 / P99 | 14,89 s / — / — | **46,901 ms / 2,054 s / 3,57 s** |
+| **k6** spike 100 VUs · 40 s | Peticiones procesadas | 1.037 | **651** |
+| | Throughput sostenido | 25,35 req/s | **11,71 req/s** |
+| | Tasa de error | 0,00 % | **2,61 % (17/651)** |
+| | Latencia P50 / P90 / P95 | 1,88 / 7,83 / 8,80 s | **1,77 / 17,29 / 25,34 s** |
+| | Latencia máxima | 13,94 s | **34,12 s** |
 
 Ambas pruebas se ejecutaron con las mismas restricciones que exige el TP:
 5 réplicas, 1,0 CPU y 1 GB de RAM por réplica.
+
+La columna **Nuestro servicio** corresponde a una corrida exclusiva con un PDF
+local de 7,25 MB, montado en modo solo lectura; no se rotaron los cuatro PDFs
+base. Este archivo es un caso local complementario, no el corpus oficial de la
+cátedra, por lo que la comparación sirve como referencia técnica y no como una
+reproducción idéntica del benchmark del profesor.
+
+Redis estaba habilitado. La sonda previa de Vegeta procesó el PDF antes del
+ataque, y k6 se ejecutó después de Vegeta; por eso estas cifras incluyen caché
+caliente y no representan una medición de extracción en frío. En Vegeta no hubo
+errores; k6 registró 17 fallos/timeouts durante el pico de 100 VUs.
+
+El archivo binario de resultados de Vegeta se genera localmente y no se versiona.
+Evidencia de k6: `tests/stress/k6/resultado-20261001-131922.txt`.
 
 ## 3. El endpoint
 
@@ -61,17 +75,15 @@ CPU se mantiene bajo.
 ## 4. Arquitectura
 
 ```
-                        red Docker "extractor-stress_web"
-   ┌──────────┐      ┌──────────────┐      ┌─────────────────────────────┐
-   │ Vegeta / │ ───▶ │   gateway    │ ───▶ │ extractor ×5 (réplicas)      │
-   │   k6     │      │   (nginx)    │      │ FastAPI + pool de workers    │
-   └──────────┘      │  balanceador │      │ + backpressure               │
-                     └──────────────┘      │ 1 CPU · 1 GB c/u             │
-                                           └──────────────┬──────────────┘
-                                                          │ caché compartido
-                                                   ┌──────▼──────┐
-                                                   │    Redis    │
-                                                   └─────────────┘
+Docker network: extractor-stress_web
+
+Vegeta / k6 --> gateway (nginx) --> extractor x5
+                  - FastAPI + worker pool
+                  - backpressure
+                  - 1 CPU, 1 GB RAM each
+                     |
+                     v
+                  Redis shared cache
 ```
 
 Todo se levanta con un único comando: `docker compose up --build`.
@@ -150,8 +162,8 @@ Markdown, con PyMuPDF, 5 réplicas balanceadas, backpressure y caché Redis.
 | Salida | Texto plano | Markdown |
 | Dependencias para extraer | documentos-service + MongoDB | Ninguna (PDF en el request) |
 | Comportamiento ante saturación | Encola hasta el timeout | 503 inmediato + reintento en otra réplica |
-| Vegeta 50 req/s | — | 100 % de éxito, P50 6,4 ms |
-| k6 spike 100 VUs | — | 14.818 peticiones, 0 % error |
+| Vegeta 50 req/s, PDF local 7,25 MB | — | 1.500 HTTP 200, P50 46,901 ms, P95 2,054 s |
+| k6 spike 100 VUs, PDF local 7,25 MB | — | 651 peticiones, 2,61 % fallos/timeouts, P95 25,34 s |
 
 Para medir el sistema sin las optimizaciones con las mismas pruebas de carga,
 basta cambiar en `docker-compose.yml`: `EXTRACTOR_BACKEND=pypdf`,
@@ -187,14 +199,14 @@ Lo que se fue probando, en orden, y qué se aprendió en cada paso:
    resolvió ejecutando Vegeta y k6 **dentro de la red de Docker** contra
    `http://gateway/extract`, y se agregó un chequeo previo de una petición para
    detectar este tipo de problema antes de lanzar la carga.
-6. **Primeros resultados (texto plano):** 100 % de éxito en Vegeta (P50 9,4 ms) y 8.088 peticiones sin errores en k6 (202 req/s).
-7. **Markdown.** Se implementó la conversión con la información de tamaño y
-   estilo de PyMuPDF, sin librerías nuevas, para no perder rendimiento. La
-   clave del caché se versionó para no devolver resultados viejos en texto
-   plano. Se repitieron ambas pruebas con el Markdown activo y los resultados
-   mejoraron: Vegeta 100 % de éxito con P50 de 6,4 ms, y k6 14.818 peticiones
-   (370 req/s) sin errores y P95 de 0,76 s. En ambas rondas el orden fue el
-   mismo (Vegeta primero, k6 después), con el caché ya cargado.
+6. **Optimización del backend y Markdown.** Se implementó la conversión con
+   PyMuPDF y un pool de workers; los ensayos anteriores con el corpus base
+   sirvieron para verificar el perfil de carga y la caché.
+7. **Corrida final con PDF grande.** Para esta versión del informe se volvieron
+   a ejecutar Vegeta y k6 usando exclusivamente el PDF local de 7,25 MB. Vegeta
+   completó 1.500 solicitudes sin errores; k6, con 100 VUs, registró 17
+   fallos/timeouts. Redis estuvo caliente, por lo que el ensayo no representa
+   una medición en frío ni sustituye la prueba con el corpus oficial.
 
 ## 8. Metodología: Code First + TDD
 
