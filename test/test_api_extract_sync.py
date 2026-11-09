@@ -19,13 +19,22 @@ def _pdf_bytes(pages: int = 2) -> bytes:
     return buffer.getvalue()
 
 
+try:  # PyMuPDF es opcional (extra "fast"); sin él se prueba con pypdf.
+    import pymupdf  # noqa: F401
+
+    _BACKEND = "pymupdf"
+except ImportError:  # pragma: no cover - depende del entorno
+    _BACKEND = "pypdf"
+
+
 @pytest.fixture(autouse=True)
 def _no_cache():
     # Los tests corren sin Redis: caché desactivado.
-    original = settings.cache_enabled
+    original = (settings.cache_enabled, settings.extractor_backend)
     settings.cache_enabled = False
+    settings.extractor_backend = _BACKEND
     yield
-    settings.cache_enabled = original
+    settings.cache_enabled, settings.extractor_backend = original
 
 
 @pytest.fixture
