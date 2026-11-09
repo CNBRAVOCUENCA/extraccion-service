@@ -6,11 +6,10 @@ Redis es una caché opcional: su caída degrada el servicio pero no lo tumba.
 from io import BytesIO
 
 import pytest
-from fastapi.testclient import TestClient
-from pypdf import PdfWriter
-
 from App.config.settings import settings
 from App.main import app
+from fastapi.testclient import TestClient
+from pypdf import PdfWriter
 
 
 class FakeRedis:

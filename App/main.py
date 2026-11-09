@@ -6,10 +6,10 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 
-from App.logging_config import configurar_logging
 from App.api import extract_sync_router, extraction_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
+from App.logging_config import configurar_logging
 from App.services.extract_pool import ExtractionPool
 
 

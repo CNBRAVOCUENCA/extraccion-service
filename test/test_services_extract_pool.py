@@ -2,11 +2,9 @@
 
 from io import BytesIO
 
-import pytest
-from pypdf import PdfWriter
-
 import App.services.extract_pool as ep
 from App.services.extract_pool import ExtractionOverloaded, ExtractionPool
+from pypdf import PdfWriter
 
 
 def _pdf_bytes(pages: int = 1) -> bytes:

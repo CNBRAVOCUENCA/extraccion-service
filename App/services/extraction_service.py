@@ -5,6 +5,8 @@ extrae el texto y devuelve el resultado. La persistencia del resultado se
 resuelve al integrar la Saga.
 """
 
+import asyncio
+
 from App.models.extraction_result import ExtractionResult
 from App.services.documentos_client import DocumentosClient
 from App.utils.pdf_extractor import PdfTextExtractor
@@ -18,5 +20,6 @@ class ExtractionService:
 
     async def extract_document_text(self, document_id: int) -> ExtractionResult:
         pdf_bytes = await self.documentos_client.get_document_file(document_id)
-        text = PdfTextExtractor.extract(pdf_bytes)
+        # La extracción es CPU: se corre en un hilo para no frenar el event loop.
+        text = await asyncio.to_thread(PdfTextExtractor.extract, pdf_bytes)
         return ExtractionResult(document_id=document_id, extracted_text=text, char_count=len(text))

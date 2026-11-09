@@ -1,14 +1,11 @@
 """Pruebas de integración de la API de Extracción, mockeando documentos-service."""
 
-from io import BytesIO
 
 import httpx
 import pytest
 import respx
-from pypdf import PdfReader, PdfWriter
-from fastapi.testclient import TestClient
-
 from App.config.settings import settings
+from fastapi.testclient import TestClient
 
 DOCUMENTOS_URL = "http://documentos-service-test:9999"
 

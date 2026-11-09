@@ -3,7 +3,6 @@
 import httpx
 import pytest
 import respx
-
 from App.exceptions import DocumentFetchError, DocumentNotFoundUpstreamError
 from App.services.documentos_client import DocumentosClient
 

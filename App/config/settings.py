@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # Máximo de peticiones simultáneas admitidas (corriendo + en cola).
     # Al superarlo se responde 503 rápido en vez de encolar y expirar.
     max_inflight: int = 8
+    # Tamaño máximo de PDF aceptado por /extract (25 MB): más grande -> 413.
+    max_pdf_bytes: int = 25 * 1024 * 1024
 
     # --- Caché de resultados en Redis ---
     cache_enabled: bool = True

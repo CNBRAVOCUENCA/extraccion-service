@@ -3,11 +3,10 @@
 from io import BytesIO
 
 import pytest
-from fastapi.testclient import TestClient
-from pypdf import PdfWriter
-
 from App.config.settings import settings
 from App.main import app
+from fastapi.testclient import TestClient
+from pypdf import PdfWriter
 
 
 def _pdf_bytes(pages: int = 2) -> bytes:
@@ -75,3 +74,9 @@ def test_front_se_sirve_en_la_raiz(client):
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
     assert "/extract" in resp.text
+
+
+def test_extract_rechaza_pdf_demasiado_grande_con_413(client, monkeypatch):
+    monkeypatch.setattr(settings, "max_pdf_bytes", 100)
+    resp = client.post("/extract", content=b"%PDF-" + b"0" * 200, headers={"Content-Type": "application/pdf"})
+    assert resp.status_code == 413

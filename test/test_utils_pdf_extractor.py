@@ -3,10 +3,9 @@
 from io import BytesIO
 
 import pytest
-from pypdf import PdfReader, PdfWriter
-
 from App.exceptions import PdfExtractionError, PdfPasswordRequiredError
 from App.utils.pdf_extractor import PdfTextExtractor
+from pypdf import PdfReader, PdfWriter
 
 
 def test_extract_returns_text_from_valid_pdf(valid_pdf_bytes):

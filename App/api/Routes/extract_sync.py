@@ -7,6 +7,7 @@ Usa el pool de extracción con backpressure + caché (app.state.extraction_pool)
 
 from fastapi import APIRouter, File, HTTPException, Request, Response, UploadFile
 
+from App.config.settings import settings
 from App.schemas.extraction import SyncExtractionResponse
 from App.services.extract_pool import ExtractionOverloaded
 
@@ -24,6 +25,7 @@ router = APIRouter(tags=["extract-sync"])
     ),
     responses={
         400: {"description": "No se recibió ningún PDF"},
+        413: {"description": "El PDF supera el tamaño máximo (MAX_PDF_BYTES)"},
         401: {"description": "El PDF está protegido con contraseña"},
         422: {"description": "El archivo no es un PDF válido"},
         503: {"description": "Servicio saturado (backpressure); reintentar"},
@@ -41,16 +43,21 @@ async def extract_sync(
 
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="No se recibió ningún PDF.")
+    if len(pdf_bytes) > settings.max_pdf_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"El PDF supera el tamaño máximo ({settings.max_pdf_bytes} bytes).",
+        )
 
     pool = request.app.state.extraction_pool
     try:
         result, from_cache = await pool.extract(pdf_bytes)
-    except ExtractionOverloaded:
+    except ExtractionOverloaded as exc:
         response.headers["Retry-After"] = "1"
         raise HTTPException(
             status_code=503,
             detail="Servicio saturado: reintente en unos instantes.",
-        )
+        ) from exc
 
     response.headers["X-Cache"] = "HIT" if from_cache else "MISS"
     return SyncExtractionResponse(**result)

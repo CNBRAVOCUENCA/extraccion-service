@@ -12,6 +12,7 @@ Responsabilidades:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import json
 from concurrent.futures import ThreadPoolExecutor
@@ -100,10 +101,8 @@ class ExtractionPool:
     async def _cache_set(self, key: str, result: dict) -> None:
         if self._redis is None:
             return
-        try:
+        with contextlib.suppress(Exception):  # caché opcional: si falla, se sigue sin ella
             await self._redis.set(key, json.dumps(result), ex=settings.cache_ttl_seconds)
-        except Exception:
-            pass
 
     async def cache_status(self) -> str:
         """Estado del caché para el readiness: "disabled", "up" o "down".
@@ -122,7 +121,5 @@ class ExtractionPool:
     async def aclose(self) -> None:
         self._executor.shutdown(wait=False, cancel_futures=True)
         if self._redis is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._redis.aclose()
-            except Exception:
-                pass

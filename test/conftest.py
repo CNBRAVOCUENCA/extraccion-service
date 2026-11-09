@@ -7,6 +7,7 @@ import pytest
 def valid_pdf_bytes():
     """PDF real mínimo con texto extraíble, generado con reportlab."""
     from io import BytesIO
+
     from reportlab.pdfgen import canvas
 
     buf = BytesIO()

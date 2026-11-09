@@ -47,7 +47,7 @@ está saturado, con **503** (backpressure) en lugar de encolar y expirar.
 
 ## Test de carga y estrés (TP)
 
-Sistema completo (5 réplicas + Traefik + Redis, con límites de CPU/RAM):
+Sistema completo (5 réplicas + nginx + Redis, con límites de CPU/RAM):
 
 ```powershell
 docker compose up --build
@@ -100,6 +100,7 @@ Copiar `.env.example` a `.env`. Variables principales:
 | `EXTRACTOR_BACKEND` | `pymupdf` | `pymupdf` (Markdown, rápido) o `pypdf` (texto plano, baseline) |
 | `EXTRACT_WORKERS` | `1` | workers de extracción por réplica |
 | `MAX_INFLIGHT` | `8` | peticiones simultáneas antes de responder 503 |
+| `MAX_PDF_BYTES` | `26214400` | tamaño máximo de PDF en `/extract` (25 MB); más grande → 413 |
 | `CACHE_ENABLED` | `true` | caché de resultados en Redis |
 | `REDIS_URL` | `redis://localhost:6379` | conexión a Redis |
 | `DOCUMENTOS_SERVICE_URL` | `http://localhost:8001` | flujo asíncrono (Saga) |
@@ -109,7 +110,7 @@ Copiar `.env.example` a `.env`. Variables principales:
 Con **uv**:
 
 ```bash
-uv sync --extra dev
+uv sync --extra dev          # agregar --extra fast para probar también con PyMuPDF
 uv run --extra dev pytest test/ -v
 ```
 
@@ -124,4 +125,4 @@ pytest test/ -v
 ## Stack
 
 Python 3.12+ · FastAPI · pypdf / pymupdf · Redis · httpx · pytest + respx ·
-Docker + Traefik · k6 + Vegeta
+Docker + nginx · k6 + Vegeta
