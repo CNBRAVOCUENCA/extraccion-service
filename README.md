@@ -102,11 +102,24 @@ Copiar `.env.example` a `.env`. Variables principales:
 | `EXTRACTOR_BACKEND` | `pymupdf` | `pymupdf` (Markdown, rápido) o `pypdf` (texto plano, baseline) |
 | `EXTRACT_WORKERS` | `1` | workers de extracción por réplica |
 | `MAX_INFLIGHT` | `8` | peticiones simultáneas antes de responder 503 |
+| `CONSUL_HTTP_ADDR` | — | URL del agente Consul; vacía desactiva el registro (si está configurada, un fallo impide el arranque) |
+| `CONSUL_HTTP_TOKEN` | — | token opcional enviado como `X-Consul-Token`; nunca se incluye en logs |
+| `CONSUL_SERVICE_NAME` | `APP_NAME` | nombre registrado en Consul |
+| `CONSUL_SERVICE_PORT` | `8000` | puerto HTTP de esta instancia |
+| `CONSUL_SERVICE_TAGS` | — | etiquetas separadas por coma, incluidas las que usa Traefik |
+| `CONSUL_SERVICE_ADDRESS` | detección automática | IP de esta instancia accesible desde Consul; permite sobrescribirla |
 | `MAX_PDF_BYTES` | `26214400` | tamaño máximo de PDF en `/extract` (25 MB); más grande → 413 |
 | `CACHE_ENABLED` | `true` | caché de resultados en Redis |
 | `REDIS_URL` | `redis://localhost:6379` | conexión a Redis |
 | `DOCUMENTOS_SERVICE_URL` | `http://localhost:8001` | flujo asíncrono (Saga) |
 | `DOCUMENTOS_SERVICE_API_KEY` | — | Secreto compartido para guardar el texto extraído en Documentos |
+
+Con Consul habilitado, la instancia se registra al iniciar y se elimina al cerrar.
+El registro usa un ID que incluye el hostname del proceso y anuncia una dirección
+IP detectada desde la ruta hacia el agente, no un nombre DNS compartido por las
+réplicas. Si esa IP no es alcanzable por el agente, configure
+`CONSUL_SERVICE_ADDRESS`. Consul consulta `/health` cada 10 segundos; una
+instancia crítica se elimina después de un minuto.
 
 `POST /api/v1/extract` sigue este orden: leer el PDF desde Documentos, extraer el
 texto, enviarlo con `PUT /api/v1/documents/{id}/extraction` usando el header

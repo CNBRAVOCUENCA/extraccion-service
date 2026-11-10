@@ -10,6 +10,7 @@ from App.api import extract_sync_router, extraction_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
 from App.logging_config import configurar_logging
+from App.services.consul_registration import ConsulServiceRegistration
 from App.services.extract_pool import ExtractionPool
 
 
@@ -17,10 +18,15 @@ from App.services.extract_pool import ExtractionPool
 async def lifespan(app: FastAPI):
     # Un único pool por proceso: separa el HTTP de la extracción CPU y cachea.
     app.state.extraction_pool = ExtractionPool()
+    consul_registration = ConsulServiceRegistration(settings)
     try:
+        await consul_registration.register()
         yield
     finally:
-        await app.state.extraction_pool.aclose()
+        try:
+            await consul_registration.deregister()
+        finally:
+            await app.state.extraction_pool.aclose()
 
 
 # Documentación de la API: solo con DEBUG=true o DOCS_ENABLED=true.

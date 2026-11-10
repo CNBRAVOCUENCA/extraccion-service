@@ -29,6 +29,13 @@ class Settings(BaseSettings):
     # Tamaño máximo de PDF aceptado por /extract (25 MB): más grande -> 413.
     max_pdf_bytes: int = 25 * 1024 * 1024
 
+    # Registro opcional en el agente HTTP local de Consul.
+    consul_http_addr: str = ""
+    consul_http_token: str = ""
+    consul_service_name: str | None = None
+    consul_service_port: int = 8000
+    consul_service_tags: str = ""
+    consul_service_address: str = ""
     # --- Caché de resultados en Redis ---
     cache_enabled: bool = True
     redis_url: str = "redis://localhost:6379"
