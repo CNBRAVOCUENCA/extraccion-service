@@ -1,0 +1,21 @@
+# Dependabot: revisa una vez por semana si hay versiones nuevas (sobre todo
+# parches de seguridad) y abre un pull request para cada actualización.
+# No cambia nada por su cuenta: cada PR se revisa y se une a mano.
+version: 2
+updates:
+  # Librerías de Python fijadas en uv.lock
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+  # Imagen base del Dockerfile
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+  # Acciones usadas en .github/workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
