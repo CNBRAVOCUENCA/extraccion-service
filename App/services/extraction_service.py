@@ -1,9 +1,4 @@
-"""Servicio de extracción: orquesta obtener el PDF y extraer su texto.
-
-No persiste nada: recibe un document_id, le pide el PDF a documentos-service,
-extrae el texto y devuelve el resultado. La persistencia del resultado se
-resuelve al integrar la Saga.
-"""
+"""Servicio de extracción: obtiene, procesa y persiste el texto del documento."""
 
 import asyncio
 
@@ -22,4 +17,5 @@ class ExtractionService:
         pdf_bytes = await self.documentos_client.get_document_file(document_id)
         # La extracción es CPU: se corre en un hilo para no frenar el event loop.
         text = await asyncio.to_thread(PdfTextExtractor.extract, pdf_bytes)
+        await self.documentos_client.persist_extracted_text(document_id, text)
         return ExtractionResult(document_id=document_id, extracted_text=text, char_count=len(text))

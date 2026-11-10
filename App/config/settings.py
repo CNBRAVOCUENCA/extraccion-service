@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # Flujo asíncrono existente (Saga): busca el PDF en documentos-service.
     documentos_service_url: str = "http://localhost:8001"
+    documentos_service_api_key: str = ""
     api_v1_prefix: str = "/api/v1"
 
     # --- Endpoint síncrono POST /extract (Test de carga/estrés) ---
@@ -28,6 +29,13 @@ class Settings(BaseSettings):
     # Tamaño máximo de PDF aceptado por /extract (25 MB): más grande -> 413.
     max_pdf_bytes: int = 25 * 1024 * 1024
 
+    # Registro opcional en el agente HTTP local de Consul.
+    consul_http_addr: str = ""
+    consul_http_token: str = ""
+    consul_service_name: str | None = None
+    consul_service_port: int = 8000
+    consul_service_tags: str = ""
+    consul_service_address: str = ""
     # --- Caché de resultados en Redis ---
     cache_enabled: bool = True
     redis_url: str = "redis://localhost:6379"

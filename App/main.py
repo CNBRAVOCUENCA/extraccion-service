@@ -10,17 +10,24 @@ from App.api import extract_sync_router, extraction_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
 from App.logging_config import configurar_logging
+from App.services.consul_registration import ConsulServiceRegistration
 from App.services.extract_pool import ExtractionPool
+from App.telemetry import install_telemetry
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Un único pool por proceso: separa el HTTP de la extracción CPU y cachea.
     app.state.extraction_pool = ExtractionPool()
+    consul_registration = ConsulServiceRegistration(settings)
     try:
+        await consul_registration.register()
         yield
     finally:
-        await app.state.extraction_pool.aclose()
+        try:
+            await consul_registration.deregister()
+        finally:
+            await app.state.extraction_pool.aclose()
 
 
 # Documentación de la API: solo con DEBUG=true o DOCS_ENABLED=true.
@@ -45,6 +52,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+install_telemetry(app, settings.app_name)
 register_exception_handlers(app)
 
 # Flujo asíncrono existente (Saga): /api/v1/extract con document_id.
@@ -83,3 +91,4 @@ async def ready(request: Request) -> dict:
     cache = await request.app.state.extraction_pool.cache_status()
     status = "degraded" if cache == "down" else "ok"
     return {"status": status, "service": settings.app_name, "cache": cache}
+

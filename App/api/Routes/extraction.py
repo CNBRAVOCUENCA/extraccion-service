@@ -11,7 +11,10 @@ router = APIRouter(tags=["extraction"])
 
 
 def _get_service() -> ExtractionService:
-    client = DocumentosClient(base_url=settings.documentos_service_url)
+    client = DocumentosClient(
+        base_url=settings.documentos_service_url,
+        api_key=settings.documentos_service_api_key,
+    )
     return ExtractionService(documentos_client=client)
 
 
