@@ -12,6 +12,7 @@ from App.config.settings import settings
 from App.logging_config import configurar_logging
 from App.services.consul_registration import ConsulServiceRegistration
 from App.services.extract_pool import ExtractionPool
+from App.telemetry import install_telemetry
 
 
 @asynccontextmanager
@@ -51,6 +52,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+install_telemetry(app, settings.app_name)
 register_exception_handlers(app)
 
 # Flujo asíncrono existente (Saga): /api/v1/extract con document_id.
@@ -89,3 +91,4 @@ async def ready(request: Request) -> dict:
     cache = await request.app.state.extraction_pool.cache_status()
     status = "degraded" if cache == "down" else "ok"
     return {"status": status, "service": settings.app_name, "cache": cache}
+
