@@ -11,6 +11,7 @@ from App.api import extract_sync_router, extraction_router
 from App.api.exception_handlers import register_exception_handlers
 from App.config.settings import settings
 from App.services.extract_pool import ExtractionPool
+from App.telemetry import install_telemetry
 
 
 @asynccontextmanager
@@ -45,6 +46,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+install_telemetry(app, settings.app_name)
 register_exception_handlers(app)
 
 # Flujo asíncrono existente (Saga): /api/v1/extract con document_id.

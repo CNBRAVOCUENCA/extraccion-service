@@ -8,11 +8,20 @@ desde la app — eso es responsabilidad del entorno de ejecución.
 import logging
 import sys
 
+from App.telemetry import get_current_trace_id
+
+
+class TraceContextFilter(logging.Filter):
+    def filter(self, record):
+        record.trace_id = get_current_trace_id() or "-"
+        return True
+
 
 def configurar_logging(nivel: str = "INFO") -> None:
     handler = logging.StreamHandler(sys.stdout)
+    handler.addFilter(TraceContextFilter())
     handler.setFormatter(logging.Formatter(
-        "%(asctime)s %(levelname)s [%(name)s] %(message)s",
+        "%(asctime)s %(levelname)s [%(name)s] trace_id=%(trace_id)s %(message)s",
         datefmt="%Y-%m-%dT%H:%M:%S",
     ))
     root = logging.getLogger()
