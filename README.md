@@ -12,8 +12,10 @@ Tiene **dos modos de uso**:
    a `documentos-service` por HTTP y extrae el texto. Es el que usa la Saga del
    orquestador.
 
-**No persiste nada** (no tiene base de datos propia). El caché de resultados es
-opcional y vive en Redis.
+No tiene base de datos propia: al terminar una extracción solicita a
+`documentos-service` que persista el texto y marque el documento como procesado.
+Solo responde éxito si Documentos confirma la escritura. El caché de resultados
+es opcional y vive en Redis.
 
 ## Arquitectura (capas)
 
@@ -104,6 +106,14 @@ Copiar `.env.example` a `.env`. Variables principales:
 | `CACHE_ENABLED` | `true` | caché de resultados en Redis |
 | `REDIS_URL` | `redis://localhost:6379` | conexión a Redis |
 | `DOCUMENTOS_SERVICE_URL` | `http://localhost:8001` | flujo asíncrono (Saga) |
+| `DOCUMENTOS_SERVICE_API_KEY` | — | Secreto compartido para guardar el texto extraído en Documentos |
+
+`POST /api/v1/extract` sigue este orden: leer el PDF desde Documentos, extraer el
+texto, enviarlo con `PUT /api/v1/documents/{id}/extraction` usando el header
+`X-Internal-API-Key` y solo entonces devolver 200. Un 404 al guardar indica que
+el documento ya no existe; errores de persistencia se propagan como 502 y no se
+reporta éxito. El `PUT` es idempotente para permitir que el emisor reintente la
+misma escritura; no se reintenta automáticamente toda la extracción.
 
 ## Correr los tests
 

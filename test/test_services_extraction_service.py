@@ -18,6 +18,7 @@ async def test_extract_document_text_success(valid_pdf_bytes):
     assert result.document_id == 1
     assert result.char_count > 0
     fake_client.get_document_file.assert_awaited_once_with(1)
+    fake_client.persist_extracted_text.assert_awaited_once_with(1, result.extracted_text)
 
 
 async def test_extract_document_text_propagates_not_found():
@@ -49,3 +50,4 @@ async def test_la_extraccion_no_bloquea_el_event_loop(valid_pdf_bytes, monkeypat
     await ExtractionService(documentos_client=fake_client).extract_document_text(1)
 
     assert hilos and hilos[0] is not threading.main_thread()
+    fake_client.persist_extracted_text.assert_awaited_once()

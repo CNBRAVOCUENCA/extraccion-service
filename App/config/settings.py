@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     # Flujo asíncrono existente (Saga): busca el PDF en documentos-service.
     documentos_service_url: str = "http://localhost:8001"
+    documentos_service_api_key: str = ""
     api_v1_prefix: str = "/api/v1"
 
     # --- Endpoint síncrono POST /extract (Test de carga/estrés) ---
