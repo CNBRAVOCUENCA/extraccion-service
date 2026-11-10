@@ -122,6 +122,15 @@ pip install -e ".[dev]"
 pytest test/ -v
 ```
 
+## Escaneo de seguridad
+
+El workflow `Security scan` audita las dependencias de runtime fijadas en
+`uv.lock` y construye/escanea la imagen Docker con Trivy. Se ejecuta en cada PR,
+push a `main`/`master`, semanalmente (lunes 06:00 UTC) y manualmente desde
+GitHub Actions. Un hallazgo HIGH o CRITICAL falla el job; los detalles quedan
+visibles en el log del workflow. También verifica que la imagen se ejecute como
+un usuario distinto de root.
+
 ## Stack
 
 Python 3.12+ · FastAPI · pypdf / pymupdf · Redis · httpx · pytest + respx ·
