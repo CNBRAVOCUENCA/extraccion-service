@@ -7,11 +7,10 @@ import socket
 import httpx
 import pytest
 import respx
-from fastapi import FastAPI
-
 from App.config.settings import Settings
 from App.services import consul_registration
 from App.services.consul_registration import ConsulRegistrationError, ConsulServiceRegistration
+from fastapi import FastAPI
 
 CONSUL_URL = "http://consul:8500"
 
