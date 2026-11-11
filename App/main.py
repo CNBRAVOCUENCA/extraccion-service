@@ -13,6 +13,7 @@ from App.logging_config import configurar_logging
 from App.services.consul_registration import ConsulServiceRegistration
 from App.services.extract_pool import ExtractionPool
 from App.telemetry import install_telemetry
+from App.tracing import configurar_trazas
 
 
 @asynccontextmanager
@@ -53,6 +54,9 @@ app = FastAPI(
 )
 
 install_telemetry(app, settings.app_name)
+# Después de install_telemetry: el middleware de OpenTelemetry queda por fuera y el
+# span ya está activo cuando se calculan las métricas y el x-trace-id.
+configurar_trazas(app, settings.app_name)
 register_exception_handlers(app)
 
 # Flujo asíncrono existente (Saga): /api/v1/extract con document_id.
