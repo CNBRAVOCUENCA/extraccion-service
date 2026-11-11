@@ -15,6 +15,7 @@ import asyncio
 import contextlib
 import hashlib
 import json
+import logging
 from concurrent.futures import ThreadPoolExecutor
 
 from App.config.settings import settings
@@ -24,6 +25,8 @@ try:  # redis es opcional: si no está, el servicio corre sin caché.
     from redis.asyncio import Redis
 except ImportError:  # pragma: no cover
     Redis = None
+
+logger = logging.getLogger(__name__)
 
 
 class ExtractionOverloaded(Exception):
@@ -47,6 +50,9 @@ class ExtractionPool:
         self._executor = ThreadPoolExecutor(max_workers=self.workers)
         self._cpu = asyncio.Semaphore(self.workers)
         self._inflight = 0
+        self._closing = False
+        self._idle = asyncio.Event()
+        self._idle.set()
 
         self._redis = redis_client
         if self._redis is None and settings.cache_enabled and Redis is not None:
@@ -68,9 +74,10 @@ class ExtractionPool:
 
         # Admisión: sin await entre la comprobación y el incremento, así que es
         # atómico dentro del event loop de un solo hilo.
-        if self._inflight >= self.max_inflight:
+        if self._closing or self._inflight >= self.max_inflight:
             raise ExtractionOverloaded()
         self._inflight += 1
+        self._idle.clear()
         try:
             async with self._cpu:
                 loop = asyncio.get_running_loop()
@@ -79,6 +86,8 @@ class ExtractionPool:
                 )
         finally:
             self._inflight -= 1
+            if self._inflight == 0:
+                self._idle.set()
 
         result = {"content": content, "page_count": page_count}
         await self._cache_set(key, result)
@@ -118,8 +127,37 @@ class ExtractionPool:
             return "down"
         return "up"
 
-    async def aclose(self) -> None:
+    @property
+    def inflight(self) -> int:
+        return self._inflight
+
+    async def aclose(self, timeout_seconds: float | None = None) -> bool:
+        """Apagado ordenado. Devuelve True si todas las extracciones terminaron a tiempo.
+
+        1. Deja de admitir: las peticiones nuevas reciben 503 (ExtractionOverloaded).
+        2. Espera las extracciones en curso hasta `timeout_seconds`
+           (SHUTDOWN_TIMEOUT_SECONDS, 10 s por defecto).
+        3. Cierra el pool: las tareas encoladas que no empezaron se cancelan. Si se
+           agotó el plazo, una extracción que ya está corriendo NO se puede cancelar
+           (Python no detiene un hilo en ejecución): sigue hasta terminar o hasta que
+           el proceso finalice, y su resultado se descarta. Se registra un aviso.
+        4. Cierra la conexión a Redis.
+        """
+        self._closing = True
+        plazo = settings.shutdown_timeout_seconds if timeout_seconds is None else timeout_seconds
+        drained = True
+        try:
+            await asyncio.wait_for(self._idle.wait(), timeout=plazo)
+        except TimeoutError:
+            drained = False
+            logger.warning(
+                "Apagado: %d extracción(es) seguían en curso tras %.1f s; no se pueden "
+                "cancelar y su resultado se descarta",
+                self._inflight,
+                plazo,
+            )
         self._executor.shutdown(wait=False, cancel_futures=True)
         if self._redis is not None:
             with contextlib.suppress(Exception):
                 await self._redis.aclose()
+        return drained

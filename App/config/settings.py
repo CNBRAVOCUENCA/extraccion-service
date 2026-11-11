@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     max_inflight: int = 8
     # Tamaño máximo de PDF aceptado por /extract (25 MB): más grande -> 413.
     max_pdf_bytes: int = 25 * 1024 * 1024
+    # Plazo para esperar extracciones en curso al apagar el servicio
+    shutdown_timeout_seconds: float = 10.0
 
     # Registro opcional en el agente HTTP local de Consul.
     consul_http_addr: str = ""

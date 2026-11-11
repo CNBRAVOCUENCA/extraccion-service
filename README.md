@@ -47,6 +47,35 @@ tests/stress/                      # pruebas de carga (k6 y Vegeta) + PDFs
 El endpoint síncrono responde con header `X-Cache: HIT|MISS` y, si el servicio
 está saturado, con **503** (backpressure) en lugar de encolar y expirar.
 
+## Límites de entrada y apagado ordenado
+
+**Tamaño máximo (`MAX_PDF_BYTES`, 25 MB por defecto)** en `POST /extract`, para los dos formatos:
+
+| Caso | Respuesta |
+|---|---|
+| PDF crudo (`application/pdf`) o multipart de hasta `MAX_PDF_BYTES` | 200 |
+| Un byte por encima del máximo, en cualquiera de los dos formatos | 413 |
+| Cuerpo vacío o multipart sin el campo `file` | 400 |
+| Archivo que no es un PDF válido | 422 |
+| Servicio saturado (`MAX_INFLIGHT`) o apagándose | 503 con `Retry-After: 1` |
+
+El cuerpo se lee por partes y se corta con 413 apenas supera el límite, **antes** de
+entregarlo al parser multipart o al extractor. Si llega `Content-Length` mayor al
+límite se rechaza de entrada, pero no se depende de ese header: un cuerpo enviado
+por partes sin largo declarado se corta igual por el conteo real. Para multipart se
+admite un margen de 64 KB para los encabezados del formulario, y luego se verifica
+el tamaño del archivo exacto. El archivo subido se cierra siempre.
+
+**Apagado (`SHUTDOWN_TIMEOUT_SECONDS`, 10 s por defecto).** Al detener el servicio:
+
+1. Deja de admitir extracciones nuevas (responden 503).
+2. Espera las extracciones en curso hasta el plazo.
+3. Cierra el pool de hilos: las tareas que todavía no empezaron se cancelan. Si el
+   plazo se agotó, una extracción que **ya está corriendo no se puede cancelar**
+   (Python no detiene un hilo en ejecución): termina sola o muere con el proceso, y
+   su resultado se descarta. Se registra un aviso en el log.
+4. Cierra la conexión a Redis y se da de baja en Consul.
+
 ## Test de carga y estrés (TP)
 
 Sistema completo (5 réplicas + nginx + Redis, con límites de CPU/RAM):
@@ -109,6 +138,7 @@ Copiar `.env.example` a `.env`. Variables principales:
 | `CONSUL_SERVICE_TAGS` | — | etiquetas separadas por coma, incluidas las que usa Traefik |
 | `CONSUL_SERVICE_ADDRESS` | detección automática | IP de esta instancia accesible desde Consul; permite sobrescribirla |
 | `MAX_PDF_BYTES` | `26214400` | tamaño máximo de PDF en `/extract` (25 MB); más grande → 413 |
+| `SHUTDOWN_TIMEOUT_SECONDS` | `10` | plazo para esperar extracciones en curso al apagar |
 | `CACHE_ENABLED` | `true` | caché de resultados en Redis |
 | `REDIS_URL` | `redis://localhost:6379` | conexión a Redis |
 | `DOCUMENTOS_SERVICE_URL` | `http://localhost:8001` | flujo asíncrono (Saga) |
