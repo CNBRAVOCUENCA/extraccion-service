@@ -78,12 +78,16 @@ def install_telemetry(app: FastAPI, service_name: str) -> None:
         except Exception:
             status = "500"
             REQUESTS.labels(service=service_name, method=request.method, route=route_name, status=status).inc()
-            REQUEST_LATENCY.labels(service=service_name, method=request.method, route=route_name, status=status).observe(time.perf_counter() - started)
+            REQUEST_LATENCY.labels(
+                service=service_name, method=request.method, route=route_name, status=status
+            ).observe(time.perf_counter() - started)
             raise
         else:
             status = str(response.status_code)
             REQUESTS.labels(service=service_name, method=request.method, route=route_name, status=status).inc()
-            REQUEST_LATENCY.labels(service=service_name, method=request.method, route=route_name, status=status).observe(time.perf_counter() - started)
+            REQUEST_LATENCY.labels(
+                service=service_name, method=request.method, route=route_name, status=status
+            ).observe(time.perf_counter() - started)
             response.headers[TRACE_ID_HEADER] = trace_id
             response.headers["x-service"] = service_name
             return response
