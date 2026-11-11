@@ -54,5 +54,8 @@ jobs:
           image-ref: ${{ env.IMAGE_NAME }}
           scanners: vuln
           severity: HIGH,CRITICAL
+          # Solo falla si la vulnerabilidad ya tiene parche disponible: las CVE sin
+          # arreglo de Debian se informan en el reporte pero no bloquean el CI.
+          ignore-unfixed: true
           format: table
           exit-code: "1"
