@@ -64,3 +64,59 @@ async def test_backpressure_rechaza_con_overloaded(monkeypatch):
     await pool.aclose()
     assert resultados.count("ok") == 2
     assert resultados.count("503") == 4
+
+
+# --- Prompt 6: apagado ordenado ---
+
+
+async def test_apagado_espera_las_extracciones_en_curso(monkeypatch):
+    import asyncio
+    import time
+
+    def lento(_bytes, backend="pypdf"):
+        time.sleep(0.2)
+        return ("texto", 1)
+
+    monkeypatch.setattr(ep, "extract_content", lento)
+    pool = ExtractionPool(workers=1, max_inflight=4, backend="pypdf", redis_client=_FakeRedis())
+    tarea = asyncio.create_task(pool.extract(_pdf_bytes(1)))
+    await asyncio.sleep(0.05)
+    assert pool.inflight == 1
+    terminado = await pool.aclose(timeout_seconds=2)
+    assert terminado is True
+    resultado, _ = await tarea
+    assert resultado["content"] == "texto"
+
+
+async def test_apagado_deja_de_admitir_peticiones_nuevas():
+    import pytest
+
+    pool = ExtractionPool(workers=1, max_inflight=4, backend="pypdf", redis_client=None)
+    await pool.aclose(timeout_seconds=0.1)
+    with pytest.raises(ExtractionOverloaded):
+        await pool.extract(_pdf_bytes(1))
+
+
+async def test_apagado_con_plazo_agotado_devuelve_false_y_cierra_redis(monkeypatch):
+    import asyncio
+    import time
+
+    def muy_lento(_bytes, backend="pypdf"):
+        time.sleep(0.5)
+        return ("texto", 1)
+
+    class _RedisQueRegistraCierre(_FakeRedis):
+        cerrado = False
+
+        async def aclose(self):
+            self.cerrado = True
+
+    redis = _RedisQueRegistraCierre()
+    monkeypatch.setattr(ep, "extract_content", muy_lento)
+    pool = ExtractionPool(workers=1, max_inflight=4, backend="pypdf", redis_client=redis)
+    tarea = asyncio.create_task(pool.extract(_pdf_bytes(1)))
+    await asyncio.sleep(0.05)
+    terminado = await pool.aclose(timeout_seconds=0.1)
+    assert terminado is False
+    assert redis.cerrado is True
+    await tarea  # el hilo en ejecución no se puede cancelar: termina solo
