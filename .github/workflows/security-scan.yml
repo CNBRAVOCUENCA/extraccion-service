@@ -20,7 +20,7 @@ jobs:
     name: pip-audit (runtime dependencies)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
@@ -40,7 +40,7 @@ jobs:
     name: Trivy (Docker image)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build application image
         run: docker build -t "$IMAGE_NAME" .
